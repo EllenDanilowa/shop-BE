@@ -1,25 +1,31 @@
 import { ERRORS, ERROR_TYPES } from '../constants/error';
 import { RESPONSE_STATUSES } from '../constants/response';
 import { getResponse } from '../helpers/response';
-import { getProductById } from '../db/getProductById';
+import { insertProduct } from '../db/insertProduct';
+import { validateProduct } from '../helpers/validateProduct';
 
-export const getProductsById = async (event = {}) => {
+export const createProduct = async (event = {}) => {
   let response;
 
-  console.log('getProductsById');
+  console.log('createProduct');
   console.log(event);
 
   try {
-    const id = event.pathParameters && event.pathParameters.productId;
+    const { body = '' } = event;
+    const data = JSON.parse(body);
 
-    if (!id) { throw new Error(ERROR_TYPES.NO_ID); }
+    const errors = validateProduct(data);
+    if (errors) {
+      console.log('Product validation error');
+      console.log(errors);
 
-    const product = await getProductById(id);
+      throw new Error(ERROR_TYPES.PRODUCT_VALIDATION);
+    }
+
+    const product = await insertProduct(data);
 
     console.log('Result');
     console.log(product);
-
-    if (!product) { throw new Error(ERROR_TYPES.NOT_FOUND); }
 
     response = getResponse(RESPONSE_STATUSES.OK, product);
   } catch (err) {
